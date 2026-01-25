@@ -1,0 +1,10 @@
+@import "tailwindcss";
+
+@theme {
+    --color-lunaLight: #A7EBF2;
+    --color-lunaMid: #54ACBF;
+    --color-lunaBlue: #26658C;
+    --color-lunaDark: #023859;
+    --color-lunaNavy: #011C40;
+}
+
