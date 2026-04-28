@@ -4,24 +4,26 @@ import { connectDB } from "./config/db.js";
 import todoRoutes from "./routes/todo.route.js";
 import authRoutes from "./routes/auth.route.js";
 import cors from "cors";
+import client from "./config/redis.js";
+
 
 dotenv.config();
 const PORT = process.env.PORT || 5000;
 const app = express();
 
 app.use(cors({
-  origin: ["http://localhost:5173","https://to-do-app-kt.vercel.app"],
+  origin: ["http://localhost:5173","https://to-do-app-kt.vercel.app","http://localhost:30008"],
   credentials: true,
 }));
 
 app.use(express.json());
-
+app.use(cors());
 app.use("/api/auth", authRoutes);
 app.use("/api/todos", todoRoutes);
+
 
 app.listen(PORT, () => {
   connectDB();
   console.log(`Server running on port ${PORT}`);
 });
-
 

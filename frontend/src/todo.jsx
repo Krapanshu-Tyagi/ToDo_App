@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import MFASetup from "./components/MFASetup.js";
 import {
   Plus,
   Trash2,
@@ -30,7 +31,12 @@ export default function Todo() {
   const [isLoading, setIsLoading] = useState(true);
   const [editingId, setEditingId] = useState(null);
   const [editText, setEditText] = useState('');
+  const [editPriority, setEditPriority] = useState('medium');
+const [editCategory, setEditCategory] = useState('work');
+const [editDueDate, setEditDueDate] = useState('');
   const [sortBy, setSortBy] = useState('date');
+  const [mfaEnabled, setMfaEnabled] = useState(false);
+  const [showMfaSetup, setShowMfaSetup] = useState(false);
 
   const categories = ['work', 'personal', 'shopping', 'health'];
   const priorities = ['low', 'medium', 'high', 'urgent'];
@@ -41,7 +47,20 @@ export default function Todo() {
     window.location.href = "/login";
     }
     fetchTodos();
+
   }, []);
+  useEffect(() => {
+  const fetchUser = async () => {
+    try {
+      const data = await apiRequest("/api/auth/me");
+      setMfaEnabled(data.mfaEnabled);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  fetchUser();
+}, []);
 
   const fetchTodos = async () => {
     try {
@@ -106,7 +125,12 @@ export default function Todo() {
     try {
       const data = await apiRequest(`/api/todos/${id}`, {
         method: 'PATCH',
-        body: JSON.stringify({ text: editText }),
+        body: JSON.stringify({
+  text: editText,
+  priority: editPriority,
+  category: editCategory,
+  dueDate: editDueDate,
+}),
       });
       setTodos(todos.map((t) => (t._id === id ? data : t)));
       setEditingId(null);
@@ -226,6 +250,7 @@ export default function Todo() {
         initial="hidden"
         animate="visible"
       >
+        
         {/* Header */}
         <motion.div variants={itemVariants} className="flex justify-between items-center mb-12">
           <div className="flex items-center gap-3">
@@ -242,6 +267,32 @@ export default function Todo() {
               <p className="text-lunaLight/60 text-sm">Advanced Task Management</p>
             </div>
           </div>
+<motion.div
+  variants={itemVariants}
+  className="mb-6 flex items-center justify-between bg-white/5 border border-lunaLight/20 rounded-xl p-4"
+>
+  <div>
+    <h3 className="text-lg font-semibold text-lunaLight">
+       Multi-Factor Authentication
+    </h3>
+    <p className="text-sm text-lunaLight/60">
+      Add extra security to your account
+    </p>
+  </div>
+
+  <button
+    onClick={() => {
+      if (!mfaEnabled) setShowMfaSetup(true);
+    }}
+    className={`px-4 py-2 rounded-lg font-semibold ${
+      mfaEnabled
+        ? "bg-green-500 text-white"
+        : "bg-red-500 text-white"
+    }`}
+  >
+    MFA: {mfaEnabled ? "ON" : "OFF"}
+  </button>
+</motion.div>
           <motion.button
             onClick={logout}
             whileHover={{ scale: 1.05 }}
@@ -492,24 +543,79 @@ export default function Todo() {
                     {/* Content */}
                     <div className="flex-1 min-w-0">
                       {editingId === todo._id ? (
-                        <div className="flex gap-2">
-                          <input
-                            type="text"
-                            value={editText}
-                            onChange={(e) => setEditText(e.target.value)}
-                            className="flex-1 px-3 py-2 bg-white/10 border border-lunaMid rounded-lg text-lunaLight focus:outline-none focus:ring-2 focus:ring-lunaMid"
-                            autoFocus
-                          />
-                          <motion.button
-                            onClick={() => updateTodo(todo._id)}
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            className="px-4 py-2 bg-lunaMid hover:bg-lunaMid/80 text-white rounded-lg transition-all"
-                          >
-                            Save
-                          </motion.button>
-                        </div>
-                      ) : (
+  <div className="flex flex-col gap-4 w-full">
+
+    {/* Text */}
+    <input
+      type="text"
+      value={editText}
+      onChange={(e) => setEditText(e.target.value)}
+      className="w-full px-4 py-3 bg-white/5 border border-lunaLight/20 rounded-lg text-lunaLight placeholder-lunaLight/40 focus:outline-none focus:ring-2 focus:ring-lunaMid focus:border-transparent transition-all hover:bg-white/10"
+      placeholder="Edit task..."
+    />
+
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+
+      {/* Priority */}
+      <select
+        value={editPriority}
+        onChange={(e) => setEditPriority(e.target.value)}
+        className="w-full px-4 py-3 bg-white/5 border border-lunaLight/20 rounded-lg text-lunaLight focus:outline-none focus:ring-2 focus:ring-lunaMid focus:border-transparent transition-all cursor-pointer"
+      >
+        {priorities.map((p) => (
+          <option key={p} value={p} className="bg-lunaDark">
+            {p.charAt(0).toUpperCase() + p.slice(1)}
+          </option>
+        ))}
+      </select>
+
+      {/* Category */}
+      <select
+        value={editCategory}
+        onChange={(e) => setEditCategory(e.target.value)}
+        className="w-full px-4 py-3 bg-white/5 border border-lunaLight/20 rounded-lg text-lunaLight focus:outline-none focus:ring-2 focus:ring-lunaMid focus:border-transparent transition-all cursor-pointer"
+      >
+        {categories.map((c) => (
+          <option key={c} value={c} className="bg-lunaDark">
+            {c.charAt(0).toUpperCase() + c.slice(1)}
+          </option>
+        ))}
+      </select>
+
+      {/* Due Date */}
+      <input
+        type="date"
+        value={editDueDate}
+        onChange={(e) => setEditDueDate(e.target.value)}
+        className="w-full px-4 py-3 bg-white/5 border border-lunaLight/20 rounded-lg text-lunaLight focus:outline-none focus:ring-2 focus:ring-lunaMid focus:border-transparent transition-all cursor-pointer"
+      />
+    </div>
+
+    {/* Buttons */}
+    <div className="flex gap-3">
+      <motion.button
+        onClick={() => updateTodo(todo._id)}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        className="flex-1 bg-gradient-to-r from-lunaMid to-lunaBlue hover:from-lunaMid/90 hover:to-lunaBlue/90 text-white font-semibold py-2 rounded-lg transition-all"
+      >
+        Save Changes
+      </motion.button>
+
+      <motion.button
+        onClick={() => {
+          setEditingId(null);
+          setEditText('');
+        }}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        className="flex-1 bg-red-500/20 border border-red-500/40 text-red-400 py-2 rounded-lg hover:bg-red-500/30 transition-all"
+      >
+        Cancel
+      </motion.button>
+    </div>
+  </div>
+) : (
                         <>
                           <p
                             className={`text-lg font-semibold transition-all ${
@@ -550,9 +656,12 @@ export default function Todo() {
                       <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
                         <motion.button
                           onClick={() => {
-                            setEditingId(todo._id);
-                            setEditText(todo.text);
-                          }}
+  setEditingId(todo._id);
+  setEditText(todo.text);
+  setEditPriority(todo.priority);
+  setEditCategory(todo.category);
+  setEditDueDate(todo.dueDate ? todo.dueDate.split("T")[0] : "");
+}}
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
                           className="p-2 hover:bg-blue-500/20 rounded-lg text-blue-400 transition-all"
@@ -595,6 +704,14 @@ export default function Todo() {
             </div>
           </motion.div>
         )}
+        {showMfaSetup && (
+  <MFASetup
+    onSuccess={() => {
+      setMfaEnabled(true);
+      setShowMfaSetup(false);
+    }}
+  />
+)}
       </motion.div>
     </div>
   );

@@ -17,6 +17,13 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    mfaEnabled: {
+  type: Boolean,
+  default: false,
+},
+mfaSecret: {
+  type: String,
+},
   },
   { timestamps: true }
 );

@@ -1,4 +1,4 @@
-const BASE_URL = "https://todo-app-9gqd.onrender.com";
+const BASE_URL = "http://localhost:5000";
 
 export const apiRequest = async (endpoint, options = {}) => {
   const token = localStorage.getItem("token");

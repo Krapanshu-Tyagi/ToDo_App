@@ -8,26 +8,51 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [mfaRequired, setMfaRequired] = useState(false);
+const [userId, setUserId] = useState("");
+const [otp, setOtp] = useState("");
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  setIsLoading(true);
 
-    try {
-      const data = await apiRequest("/api/auth/login", {
-        method: "POST",
-        body: JSON.stringify({ email, password }),
-      });
+  try {
+    const data = await apiRequest("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    });
 
-      localStorage.setItem("token", data.token);
-      window.location.href = "/todo";
-    } catch (error) {
-      alert(error.message);
-    } finally {
-      isLoading(false);
+    if (data.mfaRequired) {
+      setMfaRequired(true);
+      setUserId(data.userId);
+      return;
     }
-  };
 
+    localStorage.setItem("token", data.token);
+    window.location.href = "/todo";
+  } catch (error) {
+    alert(error.message);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+const handleOtpLogin = async () => {
+  try {
+    const data = await apiRequest("/api/auth/mfa/login", {
+      method: "POST",
+      body: JSON.stringify({
+        userId,
+        token: otp,
+      }),
+    });
+
+    localStorage.setItem("token", data.token);
+    window.location.href = "/todo";
+  } catch (err) {
+    alert("Invalid OTP");
+  }
+};
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -153,77 +178,82 @@ export default function Login() {
 
           <div className="relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 shadow-2xl">
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Email input */}
-              <motion.div variants={itemVariants}>
-                <label className="block text-sm font-semibold text-white mb-3">
-                  Email Address
-                </label>
-                <div className="relative group">
-                  <Mail className="absolute left-3 top-3 w-5 h-5 text-indigo-500 pointer-events-none" />
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@example.com"
-                    className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-300 hover:bg-white/10"
-                    required
-                  />
-                </div>
-              </motion.div>
 
-              {/* Password input */}
-              <motion.div variants={itemVariants}>
-                <label className="block text-sm font-semibold text-white mb-3">
-                  Password
-                </label>
-                <div className="relative group">
-                  <Lock className="absolute left-3 top-3 w-5 h-5 text-indigo-500 pointer-events-none" />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full pl-10 pr-12 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-300 hover:bg-white/10"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3 text-gray-400 hover:text-indigo-500 transition-colors"
-                  >
-                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                  </button>
-                </div>
-              </motion.div>
+  {!mfaRequired ? (
+    <>
+      {/* Email */}
+      <motion.div variants={itemVariants}>
+        <label className="block text-sm font-semibold text-white mb-3">
+          Email Address
+        </label>
+        <div className="relative">
+          <Mail className="absolute left-3 top-3 w-5 h-5 text-indigo-500" />
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white"
+            required
+          />
+        </div>
+      </motion.div>
 
-              {/* Submit button */}
-              <motion.button
-                variants={itemVariants}
-                type="submit"
-                disabled={isLoading}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="w-full mt-8 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold py-3 rounded-lg transition-all duration-300 relative overflow-hidden group disabled:opacity-70 disabled:cursor-not-allowed"
-              >
-                <motion.div
-                  className="absolute inset-0 bg-white/20"
-                  initial={{ x: '-100%' }}
-                  whileHover={{ x: '100%' }}
-                  transition={{ duration: 0.5 }}
-                />
-                <span className="relative flex items-center justify-center">
-                  {isLoading ? (
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                      className="w-5 h-5 border-2 border-white/50 border-t-white rounded-full"
-                    />
-                  ) : (
-                    'Login to Dashboard'
-                  )}
-                </span>
-              </motion.button>
-            </form>
+      {/* Password */}
+      <motion.div variants={itemVariants}>
+        <label className="block text-sm font-semibold text-white mb-3">
+          Password
+        </label>
+        <div className="relative">
+          <Lock className="absolute left-3 top-3 w-5 h-5 text-indigo-500" />
+          <input
+            type={showPassword ? "text" : "password"}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full pl-10 pr-12 py-3 bg-white/5 border border-white/10 rounded-lg text-white"
+            required
+          />
+        </div>
+      </motion.div>
+
+      {/* Login Button */}
+      <motion.button
+        type="submit"
+        disabled={isLoading}
+        className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3 rounded-lg"
+      >
+        {isLoading ? "Loading..." : "Login"}
+      </motion.button>
+    </>
+  ) : (
+    <>
+      {/* 🔐 OTP UI */}
+      <motion.div variants={itemVariants} className="text-center">
+        <h3 className="text-xl font-bold text-white mb-2">
+          🔐 MFA Verification
+        </h3>
+        <p className="text-gray-400 mb-4">
+          Enter OTP from Google Authenticator
+        </p>
+
+        <input
+          type="text"
+          value={otp}
+          onChange={(e) => setOtp(e.target.value)}
+          placeholder="6-digit OTP"
+          className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white text-center text-lg tracking-widest"
+        />
+
+        <button
+          type="button"
+          onClick={handleOtpLogin}
+          className="w-full mt-4 bg-green-500 text-white py-3 rounded-lg"
+        >
+          Verify OTP
+        </button>
+      </motion.div>
+    </>
+  )}
+</form>
           </div>
         </motion.div>
 
