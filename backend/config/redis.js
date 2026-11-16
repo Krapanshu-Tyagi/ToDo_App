@@ -3,14 +3,16 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-console.log("REDIS URL:", process.env.REDIS_URL);
+const redisUrl = process.env.REDIS_URL;
 
-const client = createClient({
-  url: process.env.REDIS_URL,
-});
+if (!redisUrl) {
+  throw new Error("REDIS_URL is not configured");
+}
 
-client.on("error", (err) => console.log(" Redis Error:", err));
-client.on("connect", () => console.log(" Redis Connected"));
+const client = createClient({ url: redisUrl });
+
+client.on("error", (err) => console.error("Redis connection error:", err));
+client.on("connect", () => console.info("Redis connected"));
 
 await client.connect();
 
